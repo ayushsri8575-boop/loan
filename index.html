@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loan Origination System (LOS)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-logo">LOS</div>
+      <div>
+        <div class="brand-title">Loan Origination System</div>
+        <div class="brand-subtitle">Enterprise Lending Platform</div>
+      </div>
+    </div>
+    <div class="portal-switch">
+      <button id="navUserBtn" class="tab-btn active" onclick="switchPortal('user')">User Portal</button>
+      <button id="navAdminBtn" class="tab-btn" onclick="switchPortal('admin')">Admin Desk</button>
+    </div>
+  </header>
+
+  <main class="main-container">
+
+    <section id="userPortal" class="portal-view active">
+
+      <div id="userAuthCard" class="card form-card">
+        <h2 class="section-heading">Applicant Verification</h2>
+        <p class="section-desc">Mobile number aur OTP ke jariye login karein.</p>
+
+        <div id="otpStep1" class="form-group">
+          <label for="applicantMobile">Mobile Number</label>
+          <input type="tel" id="applicantMobile" maxlength="10" placeholder="e.g. 9876543210">
+          <button type="button" class="btn btn-primary" onclick="sendOtp()">Send OTP</button>
+        </div>
+
+        <div id="otpStep2" class="form-group hidden">
+          <label for="applicantOtp">Enter 4-Digit OTP</label>
+          <input type="text" id="applicantOtp" maxlength="4" placeholder="1234">
+          <button type="button" class="btn btn-success" onclick="verifyOtp()">Verify & Continue</button>
+          <button type="button" class="btn btn-link" onclick="resendOtp()">Resend OTP</button>
+        </div>
+      </div>
+
+      <div id="userJourneyCard" class="card hidden">
+
+        <div class="journey-header">
+          <div class="journey-meta">
+            <span class="app-badge" id="displayAppNumber">Application: Pending</span>
+            <span class="time-badge" id="estimatedTime">Estimated: ~3 mins</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="journeyProgressBar" class="progress-bar-fill"></div>
+          </div>
+          <div class="steps-indicator">
+            <span class="step-dot active" id="dot1">1. Details</span>
+            <span class="step-dot" id="dot2">2. Income</span>
+            <span class="step-dot" id="dot3">3. Loan Details</span>
+            <span class="step-dot" id="dot4">4. Documents</span>
+            <span class="step-dot" id="dot5">5. Review</span>
+          </div>
+        </div>
+
+        <div id="screenStep1" class="journey-screen">
+          <h3 class="step-title">Step 1: Applicant Details</h3>
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="fullName">Full Name</label>
+              <input type="text" id="fullName" placeholder="Full name as per PAN">
+            </div>
+            <div class="form-group">
+              <label for="dob">Date of Birth</label>
+              <input type="date" id="dob">
+            </div>
+            <div class="form-group">
+              <label for="panNumber">PAN Card Number</label>
+              <input type="text" id="panNumber" maxlength="10" placeholder="ABCDE1234F" style="text-transform: uppercase;">
+            </div>
+            <div class="form-group">
+              <label for="emailAddress">Work Email ID</label>
+              <input type="email" id="emailAddress" placeholder="name@company.com">
+            </div>
+            <div class="form-group full-width">
+              <label for="resAddress">Current Residential Address</label>
+              <textarea id="resAddress" rows="2" placeholder="Address details"></textarea>
+            </div>
+          </div>
+          <div class="action-footer">
+            <span></span>
+            <button class="btn btn-primary" onclick="proceedToStep(2)">Save & Next</button>
+          </div>
+        </div>
+
+        <div id="screenStep2" class="journey-screen hidden">
+          <h3 class="step-title">Step 2: Employment & Income</h3>
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="empType">Employment Category</label>
+              <select id="empType" onchange="handleEmploymentChange()">
+                <option value="Salaried">Salaried</option>
+                <option value="Self-Employed">Self-Employed</option>
+                <option value="Business">Business Owner</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="employerName" id="lblEmployer">Employer Name</label>
+              <input type="text" id="employerName" placeholder="Company Name">
+            </div>
+            <div class="form-group">
+              <label for="monthlyIncome" id="lblIncome">Net Monthly Income (INR)</label>
+              <input type="number" id="monthlyIncome" placeholder="e.g. 60000" oninput="runCreditAssessment()">
+            </div>
+            <div class="form-group">
+              <label for="existingEmi">Existing Monthly EMIs (INR)</label>
+              <input type="number" id="existingEmi" value="0">
+            </div>
+          </div>
+
+          <div class="bureau-card">
+            <div class="bureau-header">
+              <span>Credit Bureau Check (Mock Equifax/CIBIL)</span>
+              <span class="score-pill" id="scoreDisplay">Score: 765 (Excellent)</span>
+            </div>
+            <p class="bureau-text">Auto-retrieved based on PAN. Eligible for preferential rates.</p>
+          </div>
+
+          <div class="action-footer">
+            <button class="btn btn-secondary" onclick="proceedToStep(1)">Back</button>
+            <button class="btn btn-primary" onclick="proceedToStep(3)">Save & Next</button>
+          </div>
+        </div>
+
+        <div id="screenStep3" class="journey-screen hidden">
+          <h3 class="step-title">Step 3: Loan Configuration & EMI</h3>
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="loanType">Loan Product</label>
+              <select id="loanType" onchange="calculateLoanTerms()">
+                <option value="Personal Loan">Personal Loan</option>
+                <option value="Home Loan">Home Loan</option>
+                <option value="Business Loan">Business Expansion Loan</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="loanPurpose">Loan Purpose</label>
+              <input type="text" id="loanPurpose" placeholder="e.g. Home Renovation, Business">
+            </div>
+            <div class="form-group">
+              <label for="loanAmount">Requested Amount (INR)</label>
+              <input type="number" id="loanAmount" value="500000" min="50000" step="10000" oninput="calculateLoanTerms()">
+            </div>
+            <div class="form-group">
+              <label for="loanTenure">Tenure (Months)</label>
+              <select id="loanTenure" onchange="calculateLoanTerms()">
+                <option value="12">12 Months (1 Year)</option>
+                <option value="24">24 Months (2 Years)</option>
+                <option value="36" selected>36 Months (3 Years)</option>
+                <option value="48">48 Months (4 Years)</option>
+                <option value="60">60 Months (5 Years)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="rate-breakdown">
+            <div class="breakdown-item">
+              <span class="breakdown-lbl">Interest Rate (System Fixed)</span>
+              <span class="breakdown-val" id="dispRate">10.5% p.a.</span>
+            </div>
+            <div class="breakdown-item">
+              <span class="breakdown-lbl">Monthly EMI</span>
+              <span class="breakdown-val highlight" id="dispEmi">₹ 16,250</span>
+            </div>
+            <div class="breakdown-item">
+              <span class="breakdown-lbl">Processing Fee (2% + GST)</span>
+              <span class="breakdown-val" id="dispFee">₹ 11,800</span>
+            </div>
+          </div>
+
+          <div class="action-footer">
+            <button class="btn btn-secondary" onclick="proceedToStep(2)">Back</button>
+            <button class="btn btn-primary" onclick="proceedToStep(4)">Save & Next</button>
+          </div>
+        </div>
+
+        <div id="screenStep4" class="journey-screen hidden">
+          <h3 class="step-title">Step 4: Dynamic Document Checklist</h3>
+          <p class="section-desc" id="docTypeNotice">Dynamic requirements loaded based on selected employment profile.</p>
+
+          <div class="doc-list">
+            <div class="doc-row">
+              <div>
+                <strong>Identity Proof (PAN Card)</strong>
+                <div class="file-hint">Original scanned copy (PDF/JPEG)</div>
+              </div>
+              <input type="file" id="filePan" onchange="markUploaded('panBadge')">
+              <span id="panBadge" class="doc-status pending">Pending</span>
+            </div>
+
+            <div class="doc-row">
+              <div>
+                <strong>Address Proof (Aadhaar / Passport)</strong>
+                <div class="file-hint">Front & Back combined</div>
+              </div>
+              <input type="file" id="fileAddress" onchange="markUploaded('addrBadge')">
+              <span id="addrBadge" class="doc-status pending">Pending</span>
+            </div>
+
+            <div class="doc-row" id="docRowIncome1">
+              <div>
+                <strong id="lblDocIncome1">Latest 3 Months Salary Slips</strong>
+                <div class="file-hint">Digitally signed PDF from employer</div>
+              </div>
+              <input type="file" id="fileIncome1" onchange="markUploaded('inc1Badge')">
+              <span id="inc1Badge" class="doc-status pending">Pending</span>
+            </div>
+
+            <div class="doc-row">
+              <div>
+                <strong>Bank Statement (6 Months)</strong>
+                <div class="file-hint">Official e-statement with clear transactions</div>
+              </div>
+              <input type="file" id="fileBank" onchange="markUploaded('bankBadge')">
+              <span id="bankBadge" class="doc-status pending">Pending</span>
+            </div>
+          </div>
+
+          <div class="action-footer">
+            <button class="btn btn-secondary" onclick="proceedToStep(3)">Back</button>
+            <button class="btn btn-primary" onclick="proceedToStep(5)">Review Application</button>
+          </div>
+        </div>
+
+        <div id="screenStep5" class="journey-screen hidden">
+          <h3 class="step-title">Step 5: Review & Final Submission</h3>
+          <div class="summary-box">
+            <div class="summary-line"><span>Applicant Name:</span> <strong id="sumName">-</strong></div>
+            <div class="summary-line"><span>PAN:</span> <strong id="sumPan">-</strong></div>
+            <div class="summary-line"><span>Employment Profile:</span> <strong id="sumEmp">-</strong></div>
+            <div class="summary-line"><span>Loan Amount:</span> <strong id="sumAmount">-</strong></div>
+            <div class="summary-line"><span>Tenure / Rate:</span> <strong id="sumTenureRate">-</strong></div>
+            <div class="summary-line"><span>Estimated EMI:</span> <strong id="sumEmi">-</strong></div>
+            <div class="summary-line"><span>Bureau Credit Status:</span> <strong class="text-success">Score 765 (Auto-Verified)</strong></div>
+          </div>
+
+          <div class="consent-check">
+            <input type="checkbox" id="userConsent">
+            <label for="userConsent">I certify that all details submitted are accurate and authorize credit verification checks.</label>
+          </div>
+
+          <div class="action-footer">
+            <button class="btn btn-secondary" onclick="proceedToStep(4)">Back</button>
+            <button class="btn btn-success" onclick="submitApplication()">Confirm & Submit Application</button>
+          </div>
+        </div>
+
+        <div id="screenSuccess" class="journey-screen hidden">
+          <div class="status-panel">
+            <div class="check-icon">✓</div>
+            <h2>Application Successfully Submitted</h2>
+            <p>Your unique application identifier:</p>
+            <div class="highlight-app-num" id="finalAppNumber">APP-2026-0000</div>
+            
+            <div class="lifecycle-tracker">
+              <h4>Current Status: <span id="currentStatusBadge" class="badge">Submitted</span></h4>
+              <p id="statusActionMsg">Application is under initial desk verification.</p>
+            </div>
+
+            <div id="sanctionOfferCard" class="offer-container hidden">
+              <h3>Sanction Letter & In-Principle Offer</h3>
+              <p>Your loan has been officially sanctioned. Please accept and e-sign to initiate disbursal hand-off.</p>
+              <div class="offer-meta">
+                <div>Sanctioned: <strong id="offerAmt">₹ 5,00,000</strong></div>
+                <div>Approved Rate: <strong id="offerRate">10.5%</strong></div>
+                <div>Tenure: <strong id="offerTenure">36 Months</strong></div>
+              </div>
+              <button class="btn btn-primary" onclick="acceptAndESign()">Accept & E-Sign Offer</button>
+            </div>
+
+            <div id="disbursalSuccessNotice" class="disbursal-notice hidden">
+              <h3>Mandate Hand-Off Triggered</h3>
+              <p>e-NACH mandate registered. Loan account created in Core LMS for auto-disbursal.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <section id="adminPortal" class="portal-view">
+
+      <div class="admin-toolbar">
+        <div>
+          <h2>Underwriting & Operations Management</h2>
+          <span class="role-caption">Role: Credit Risk, Operations, & Approver Desk</span>
+        </div>
+        <div class="admin-role-select">
+          <label for="adminRoleFilter">Active Role:</label>
+          <select id="adminRoleFilter">
+            <option value="all">Credit Underwriter / Maker</option>
+            <option value="approver">Senior Approver / Checker</option>
+            <option value="ops">Disbursal Operations</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card table-card">
+        <div class="table-actions">
+          <h3>Active Loan Pipelines</h3>
+          <button class="btn btn-secondary btn-sm" onclick="renderAdminTable()">Refresh Queue</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>App Number</th>
+                <th>Applicant</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Tenure</th>
+                <th>Credit Score</th>
+                <th>Stage</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="adminTableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="reviewModal" class="modal hidden">
+        <div class="modal-box">
+          <div class="modal-header">
+            <h3 id="modalAppId">Review Application</h3>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+          </div>
+
+          <div class="modal-body">
+            <div class="grid-2">
+              <div>
+                <h4>Applicant Information</h4>
+                <p><strong>Name:</strong> <span id="mApplicantName"></span></p>
+                <p><strong>PAN:</strong> <span id="mPan"></span></p>
+                <p><strong>Employment:</strong> <span id="mEmp"></span></p>
+                <p><strong>Monthly Income:</strong> ₹<span id="mIncome"></span></p>
+                <p><strong>Credit Bureau:</strong> <span class="text-success font-bold">765 (Low Risk)</span></p>
+              </div>
+
+              <div>
+                <h4>Loan Configuration</h4>
+                <p><strong>Category:</strong> <span id="mCategory"></span></p>
+                <p><strong>Requested Amount:</strong> ₹<span id="mAmount"></span></p>
+                <p><strong>Fixed Rate:</strong> <span id="mRate"></span></p>
+                <p><strong>Tenure:</strong> <span id="mTenure"></span> Months</p>
+                <p><strong>Calculated EMI:</strong> ₹<span id="mEmi"></span></p>
+              </div>
+            </div>
+
+            <hr class="divider">
+
+            <h4>Document Verification Desk</h4>
+            <div class="doc-audit-grid">
+              <div class="audit-item">
+                <span>Identity (PAN)</span>
+                <span class="text-success">Verified</span>
+              </div>
+              <div class="audit-item">
+                <span>Address Verification</span>
+                <span class="text-success">Verified</span>
+              </div>
+              <div class="audit-item">
+                <span>Income Statement</span>
+                <span class="text-success">Verified</span>
+              </div>
+            </div>
+
+            <div class="decision-group">
+              <label for="adminDecisionNotes">Underwriting Notes / Reason Code</label>
+              <textarea id="adminDecisionNotes" rows="2" placeholder="e.g. Income meets eligibility criteria."></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-danger" onclick="makeDecision('Rejected')">Reject</button>
+            <button class="btn btn-warning" onclick="makeDecision('On Hold')">Raise Deficiency / Hold</button>
+            <button class="btn btn-success" onclick="makeDecision('Approved')">Approve & Sanction</button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
